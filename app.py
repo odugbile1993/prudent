@@ -212,6 +212,14 @@ st.markdown("""
         background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
     }
     
+    .secondary-button {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    }
+    
+    .secondary-button:hover {
+        background: linear-gradient(135deg, #495057 0%, #6c757d 100%) !important;
+    }
+    
     /* Sidebar Enhancements */
     .sidebar .sidebar-content {
         background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
@@ -329,11 +337,11 @@ class AIBudgetAdvisor:
                     'icon': '🏫'
                 },
                 {
-                    'title': 'Udemy - Budgeting Masterclass',
-                    'url': 'https://www.udemy.com/courses/finance-and-accounting/personal-finance/',
-                    'description': 'Practical budgeting techniques and strategies',
+                    'title': 'Udemy - Personal Finance Masterclass',
+                    'url': 'https://www.udemy.com/course/personal-finance/',
+                    'description': 'Comprehensive personal finance and budgeting',
                     'level': 'Intermediate',
-                    'duration': '10 hours',
+                    'duration': '12 hours',
                     'icon': '💡'
                 }
             ],
@@ -380,24 +388,32 @@ class AIBudgetAdvisor:
         poverty_line = poverty_lines.get(country, 5000)
         adjusted_poverty_line = poverty_line * (family_size / 4)
         
-        if total_income < adjusted_poverty_line:
-            recommendations.append("🎯 **Priority**: Focus on essential needs first and explore assistance programs.")
-        
-        if savings_ratio < 0.1:
-            recommendations.append("💡 **Emergency Fund**: Try to save at least 10% of your income for emergencies")
-        
-        if expenses.get('Food', 0) / total_income > 0.4:
-            recommendations.append("🍲 **Food Budget**: Consider buying in bulk or exploring local markets")
-        
-        if savings_ratio > 0.2:
-            recommendations.append("🌟 **Great Job!**: You're saving well. Consider small investments")
-        
-        # Add more specific recommendations based on expense patterns
-        if expenses.get('Transport', 0) / total_income > 0.2:
-            recommendations.append("🚌 **Transport**: Consider carpooling or public transport to reduce costs")
-        
-        if expenses.get('Utilities', 0) / total_income > 0.15:
-            recommendations.append("⚡ **Utilities**: Look into energy-efficient appliances and practices")
+        # Check if income is zero to avoid division errors
+        if total_income == 0:
+            recommendations.append("💡 **Start Tracking**: Begin by entering your income to get personalized recommendations")
+            recommendations.append("🎯 **Priority**: Focus on establishing a stable income source")
+        else:
+            if total_income < adjusted_poverty_line:
+                recommendations.append("🎯 **Priority**: Focus on essential needs first and explore assistance programs.")
+            
+            if savings_ratio < 0.1:
+                recommendations.append("💡 **Emergency Fund**: Try to save at least 10% of your income for emergencies")
+            
+            # Safe division checks for expense ratios
+            food_ratio = expenses.get('Food', 0) / total_income if total_income > 0 else 0
+            if food_ratio > 0.4:
+                recommendations.append("🍲 **Food Budget**: Consider buying in bulk or exploring local markets")
+            
+            transport_ratio = expenses.get('Transport', 0) / total_income if total_income > 0 else 0
+            if transport_ratio > 0.2:
+                recommendations.append("🚌 **Transport**: Consider carpooling or public transport to reduce costs")
+            
+            utilities_ratio = expenses.get('Utilities', 0) / total_income if total_income > 0 else 0
+            if utilities_ratio > 0.15:
+                recommendations.append("⚡ **Utilities**: Look into energy-efficient appliances and practices")
+            
+            if savings_ratio > 0.2:
+                recommendations.append("🌟 **Great Job!**: You're saving well. Consider small investments")
         
         return {
             'savings': savings,
@@ -604,6 +620,20 @@ def initialize_session_state():
     if 'user_stats' not in st.session_state:
         st.session_state.user_stats = UserStatistics()
 
+def clear_form():
+    """Clear all form inputs and reset analysis"""
+    st.session_state.analyze = False
+    # Clear all input fields by resetting their values
+    for key in list(st.session_state.keys()):
+        if key.startswith('inc_') or key.startswith('exp_'):
+            st.session_state[key] = 0
+    st.rerun()
+
+def go_home():
+    """Return to home page"""
+    st.session_state.analyze = False
+    st.rerun()
+
 def main():
     # Main header with animations
     st.markdown('<h1 class="main-header">💰 BudgetBuddy AI</h1>', unsafe_allow_html=True)
@@ -697,116 +727,145 @@ def main():
                 key=f"exp_{category}"
             )
         
-        # Analysis button
-        if st.button("🔍 Analyze My Budget", use_container_width=True, type="primary"):
-            st.session_state.analyze = True
-            st.session_state.country = country
-            st.rerun()
+        # Action buttons in sidebar
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔍 Analyze Budget", use_container_width=True, type="primary"):
+                st.session_state.analyze = True
+                st.session_state.country = country
+                st.rerun()
+        
+        with col2:
+            if st.button("🗑️ Clear Form", use_container_width=True):
+                clear_form()
     
     # Main content when analysis is done
     if st.session_state.analyze:
-        # AI Analysis
-        analysis = ai_advisor.analyze_spending_patterns(
-            income, expenses, 
-            st.session_state.country, 
-            family_size
-        )
-        
-        # Add to statistics
-        st.session_state.user_stats.add_user_data(
-            st.session_state.country,
-            analysis['total_income'],
-            analysis['savings_ratio'],
-            analysis['financial_health']
-        )
-        
-        # Financial Summary with enhanced visuals
-        st.header("📈 Your Financial Analysis")
-        
-        summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
-        
-        with summary_col1:
-            st.metric("Total Monthly Income", f"{currency_symbol}{analysis['total_income']:,}")
-        
-        with summary_col2:
-            st.metric("Total Monthly Expenses", f"{currency_symbol}{analysis['total_expenses']:,}")
-        
-        with summary_col3:
-            st.metric("Monthly Savings", f"{currency_symbol}{analysis['savings']:,}", 
-                     delta=f"{analysis['savings_ratio']:.1%}")
-        
-        with summary_col4:
-            poverty_status = "Above" if analysis['above_poverty_line'] else "Below"
-            poverty_color = "normal" if analysis['above_poverty_line'] else "off"
-            st.metric(
-                "Poverty Line Status", 
-                poverty_status,
-                delta=f"Est: {currency_symbol}{analysis['poverty_line']:,.0f}",
-                delta_color=poverty_color
-            )
-        
-        # Visualizations
-        col1, col2 = st.columns(2)
-        
+        # Action buttons at top
+        col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
-            fig_compare = go.Figure()
-            fig_compare.add_trace(go.Bar(
-                name='Income',
-                x=['Total'],
-                y=[analysis['total_income']],
-                marker_color='#28a745'
-            ))
-            fig_compare.add_trace(go.Bar(
-                name='Expenses',
-                x=['Total'],
-                y=[analysis['total_expenses']],
-                marker_color='#dc3545'
-            ))
-            fig_compare.update_layout(
-                title=f"Income vs Expenses ({currency_symbol})",
-                yaxis_title=f"Amount ({currency_symbol})"
-            )
-            st.plotly_chart(fig_compare, use_container_width=True)
-        
+            if st.button("🏠 Home", use_container_width=True):
+                go_home()
         with col2:
-            expense_data = {k: v for k, v in expenses.items() if v > 0}
-            if expense_data:
-                fig_expenses = px.pie(
-                    values=list(expense_data.values()),
-                    names=list(expense_data.keys()),
-                    title=f"Expense Distribution ({currency_symbol})"
+            if st.button("🔄 New Analysis", use_container_width=True):
+                clear_form()
+        with col3:
+            if st.button("📊 View Statistics", use_container_width=True):
+                # Scroll to statistics section
+                st.rerun()
+        
+        # AI Analysis with error handling
+        try:
+            analysis = ai_advisor.analyze_spending_patterns(
+                income, expenses, 
+                st.session_state.country, 
+                family_size
+            )
+            
+            # Add to statistics
+            st.session_state.user_stats.add_user_data(
+                st.session_state.country,
+                analysis['total_income'],
+                analysis['savings_ratio'],
+                analysis['financial_health']
+            )
+            
+            # Financial Summary with enhanced visuals
+            st.header("📈 Your Financial Analysis")
+            
+            summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
+            
+            with summary_col1:
+                st.metric("Total Monthly Income", f"{currency_symbol}{analysis['total_income']:,}")
+            
+            with summary_col2:
+                st.metric("Total Monthly Expenses", f"{currency_symbol}{analysis['total_expenses']:,}")
+            
+            with summary_col3:
+                st.metric("Monthly Savings", f"{currency_symbol}{analysis['savings']:,}", 
+                         delta=f"{analysis['savings_ratio']:.1%}")
+            
+            with summary_col4:
+                poverty_status = "Above" if analysis['above_poverty_line'] else "Below"
+                poverty_color = "normal" if analysis['above_poverty_line'] else "off"
+                st.metric(
+                    "Poverty Line Status", 
+                    poverty_status,
+                    delta=f"Est: {currency_symbol}{analysis['poverty_line']:,.0f}",
+                    delta_color=poverty_color
                 )
-                st.plotly_chart(fig_expenses, use_container_width=True)
+            
+            # Visualizations
+            if analysis['total_income'] > 0 or analysis['total_expenses'] > 0:
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    fig_compare = go.Figure()
+                    fig_compare.add_trace(go.Bar(
+                        name='Income',
+                        x=['Total'],
+                        y=[analysis['total_income']],
+                        marker_color='#28a745'
+                    ))
+                    fig_compare.add_trace(go.Bar(
+                        name='Expenses',
+                        x=['Total'],
+                        y=[analysis['total_expenses']],
+                        marker_color='#dc3545'
+                    ))
+                    fig_compare.update_layout(
+                        title=f"Income vs Expenses ({currency_symbol})",
+                        yaxis_title=f"Amount ({currency_symbol})"
+                    )
+                    st.plotly_chart(fig_compare, use_container_width=True)
+                
+                with col2:
+                    expense_data = {k: v for k, v in expenses.items() if v > 0}
+                    if expense_data:
+                        fig_expenses = px.pie(
+                            values=list(expense_data.values()),
+                            names=list(expense_data.keys()),
+                            title=f"Expense Distribution ({currency_symbol})"
+                        )
+                        st.plotly_chart(fig_expenses, use_container_width=True)
+                    else:
+                        st.info("No expense data to display")
+            
+            # AI Recommendations with enhanced styling
+            st.header("🤖 Your Personalized Recommendations")
+            if analysis['recommendations']:
+                for recommendation in analysis['recommendations']:
+                    st.markdown(f'<div class="ai-recommendation">{recommendation}</div>', 
+                               unsafe_allow_html=True)
             else:
-                st.info("No expense data to display")
-        
-        # AI Recommendations with enhanced styling
-        st.header("🤖 Your Personalized Recommendations")
-        for recommendation in analysis['recommendations']:
-            st.markdown(f'<div class="ai-recommendation">{recommendation}</div>', 
-                       unsafe_allow_html=True)
-        
-        # Financial Health Score with progress bar
-        st.subheader("🏥 Financial Health Score")
-        health_score = min(100, max(0, int(analysis['savings_ratio'] * 200)))
-        
-        st.markdown(f"""
-        <div class="progress-container">
-            <div class="progress-fill" style="width: {health_score}%"></div>
-        </div>
-        <p style="text-align: center; font-weight: bold; margin-top: 0.5rem;">{health_score}/100</p>
-        """, unsafe_allow_html=True)
-        
-        if health_score >= 70:
-            st.success("👍 Excellent Financial Health - You're doing great!")
-        elif health_score >= 40:
-            st.warning("⚠️ Fair - There's room for improvement")
-        else:
-            st.error("🚨 Needs Attention - Let's work on improving your financial health")
-        
-        # Display additional sections
-        display_statistics(st.session_state.user_stats)
-        display_learning_resources(ai_advisor)
+                st.info("Enter your income and expenses to get personalized recommendations")
+            
+            # Financial Health Score with progress bar
+            if analysis['total_income'] > 0:
+                st.subheader("🏥 Financial Health Score")
+                health_score = min(100, max(0, int(analysis['savings_ratio'] * 200)))
+                
+                st.markdown(f"""
+                <div class="progress-container">
+                    <div class="progress-fill" style="width: {health_score}%"></div>
+                </div>
+                <p style="text-align: center; font-weight: bold; margin-top: 0.5rem;">{health_score}/100</p>
+                """, unsafe_allow_html=True)
+                
+                if health_score >= 70:
+                    st.success("👍 Excellent Financial Health - You're doing great!")
+                elif health_score >= 40:
+                    st.warning("⚠️ Fair - There's room for improvement")
+                else:
+                    st.error("🚨 Needs Attention - Let's work on improving your financial health")
+            
+            # Display additional sections
+            display_statistics(st.session_state.user_stats)
+            display_learning_resources(ai_advisor)
+            
+        except Exception as e:
+            st.error("❌ An error occurred during analysis. Please check your inputs and try again.")
+            st.info("💡 Make sure you've entered valid numbers for income and expenses.")
 
 if __name__ == "__main__":
     main()
