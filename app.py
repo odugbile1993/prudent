@@ -3,45 +3,309 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from datetime import datetime, timedelta
+import json
 
 # Page configuration
 st.set_page_config(
-    page_title="BudgetBuddy AI - Poverty Alleviation",
+    page_title="BudgetBuddy AI - Smart Financial Planning",
     page_icon="💰",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS with animations and responsive design
 st.markdown("""
 <style>
+    /* Main Styles */
     .main-header {
-        font-size: 2.5rem;
-        color: #1f77b4;
+        font-size: 3.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         text-align: center;
+        margin-bottom: 1rem;
+        font-weight: 800;
+        animation: fadeIn 1s ease-in;
+    }
+    
+    .sub-header {
+        font-size: 1.3rem;
+        color: #666;
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: slideUp 1s ease-out;
+    }
+    
+    /* Animation Keyframes */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+        40% {transform: translateY(-10px);}
+        60% {transform: translateY(-5px);}
+    }
+    
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 4rem 2rem;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        margin-bottom: 3rem;
+        animation: fadeIn 1.5s ease-in;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem;
+        opacity: 0.9;
         margin-bottom: 2rem;
     }
+    
+    /* Feature Cards */
+    .feature-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        height: 100%;
+        animation: slideUp 0.8s ease-out;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        border-color: #667eea;
+        animation: pulse 2s infinite;
+    }
+    
+    .feature-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        animation: bounce 2s infinite;
+    }
+    
+    /* Interactive Elements */
     .ai-recommendation {
-        background-color: #e8f4fd;
-        padding: 1rem;
-        border-left: 4px solid #1f77b4;
+        background: linear-gradient(135deg, #e8f4fd 0%, #d4e7fa 100%);
+        padding: 1.5rem;
+        border-left: 5px solid #667eea;
         margin: 1rem 0;
-        border-radius: 5px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        animation: slideUp 0.6s ease-out;
     }
+    
+    .ai-recommendation:hover {
+        transform: translateX(10px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
     .resource-card {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
         border-left: 4px solid #28a745;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+        animation: slideUp 0.7s ease-out;
+    }
+    
+    .resource-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 1rem;
+        border-radius: 15px;
+        text-align: center;
+        margin: 0.5rem;
+        transition: all 0.3s ease;
+        animation: slideUp 0.8s ease-out;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+        transform: rotate(45deg);
+        transition: all 0.6s ease;
+    }
+    
+    .stat-card:hover::before {
+        transform: rotate(45deg) translate(50%, 50%);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Buttons */
+    .stButton button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        animation: fadeIn 1s ease-in;
+    }
+    
+    .stButton button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    /* Sidebar Enhancements */
+    .sidebar .sidebar-content {
+        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .sidebar-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin: 1rem 0;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-section:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* Input Enhancements */
+    .stNumberInput input, .stSelectbox select {
+        border-radius: 10px !important;
+        border: 2px solid #e9ecef !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stNumberInput input:focus, .stSelectbox select:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+    }
+    
+    /* Progress Bars */
+    .progress-container {
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        height: 20px;
+        margin: 1rem 0;
+        position: relative;
+    }
+    
+    .progress-fill {
+        background: linear-gradient(90deg, #28a745, #20c997);
+        height: 100%;
+        transition: width 1s ease-in-out;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(400%); }
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .main-header {
+            font-size: 2.5rem;
+        }
+        
+        .hero-title {
+            font-size: 2rem;
+        }
+        
+        .feature-card {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    /* Loading Animation */
+    .loading-spinner {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Rating Stars */
+    .rating-stars {
+        color: #FFD700;
+        font-size: 1.5rem;
         margin: 0.5rem 0;
+        animation: bounce 2s infinite;
     }
-    .resource-link {
-        color: #1f77b4;
-        text-decoration: none;
-        font-weight: bold;
+    
+    /* Floating Elements */
+    .floating {
+        animation: float 3s ease-in-out infinite;
     }
-    .resource-link:hover {
-        color: #0056b3;
-        text-decoration: underline;
+    
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -51,7 +315,6 @@ class AIBudgetAdvisor:
         self.income_categories = ['Salary', 'Business', 'Agriculture', 'Daily Wage', 'Other']
         self.expense_categories = ['Food', 'Housing', 'Transport', 'Healthcare', 'Education', 'Utilities', 'Other']
         
-        # Country and currency data
         self.country_data = {
             'India': {'currency': '₹', 'currency_name': 'Indian Rupee', 'symbol': '₹'},
             'United States': {'currency': '$', 'currency_name': 'US Dollar', 'symbol': '$'},
@@ -65,119 +328,61 @@ class AIBudgetAdvisor:
             'Custom': {'currency': '', 'currency_name': 'Custom Currency', 'symbol': ''}
         }
         
-        # Real resources database
-        self.resources = {
-            'India': {
-                'financial_literacy': [
-                    {"name": "National Centre for Financial Education", "url": "https://www.ncfe.org.in", "description": "Free financial literacy courses and resources"},
-                    {"name": "Pocket Money Management App", "url": "https://groww.in", "description": "Indian investment and savings platform"},
-                ],
-                'government_schemes': [
-                    {"name": "PM Jan Dhan Yojana", "url": "https://pmjdy.gov.in", "description": "Zero-balance bank accounts for all"},
-                    {"name": "MGNREGA Employment", "url": "https://nrega.nic.in", "description": "Rural employment guarantee scheme"},
-                ],
-                'community_support': [
-                    {"name": "Goonj - Resource Mobilization", "url": "https://goonj.org", "description": "Community development and resource sharing"},
-                    {"name": "GiveIndia", "url": "https://giveindia.org", "description": "Platform for donors and NGOs"},
-                ]
-            },
-            'United States': {
-                'financial_literacy': [
-                    {"name": "MyMoney.gov", "url": "https://www.mymoney.gov", "description": "US government financial education"},
-                    {"name": "Consumer Financial Protection Bureau", "url": "https://www.consumerfinance.gov", "description": "Financial tools and resources"},
-                ],
-                'government_schemes': [
-                    {"name": "SNAP Benefits", "url": "https://www.fns.usda.gov/snap", "description": "Supplemental Nutrition Assistance Program"},
-                    {"name": "Medicaid", "url": "https://www.medicaid.gov", "description": "Healthcare for low-income families"},
-                ],
-                'community_support': [
-                    {"name": "Feeding America", "url": "https://www.feedingamerica.org", "description": "National food bank network"},
-                    {"name": "United Way", "url": "https://www.unitedway.org", "description": "Community support services"},
-                ]
-            },
-            'United Kingdom': {
-                'financial_literacy': [
-                    {"name": "Money Helper", "url": "https://www.moneyhelper.org.uk", "description": "Free financial guidance"},
-                    {"name": "Citizens Advice", "url": "https://www.citizensadvice.org.uk", "description": "Money and legal advice"},
-                ],
-                'government_schemes': [
-                    {"name": "Universal Credit", "url": "https://www.gov.uk/universal-credit", "description": "Social security payment"},
-                    {"name": "Food Banks - Trussell Trust", "url": "https://www.trusselltrust.org", "description": "Emergency food support"},
-                ],
-                'community_support': [
-                    {"name": "Local Food Banks", "url": "https://www.foodbank.org.uk", "description": "Find nearby food banks"},
-                    {"name": "Shelter UK", "url": "https://www.shelter.org.uk", "description": "Housing and homelessness charity"},
-                ]
-            },
-            'General': {
-                'online_learning': [
-                    {"name": "Khan Academy - Personal Finance", "url": "https://www.khanacademy.org/college-careers-more/personal-finance", "description": "Free financial education courses"},
-                    {"name": "Coursera Financial Literacy", "url": "https://www.coursera.org/courses?query=financial%20literacy", "description": "Free and paid finance courses"},
-                ],
-                'budgeting_tools': [
-                    {"name": "Google Sheets Templates", "url": "https://docs.google.com/spreadsheets", "description": "Free budget templates"},
-                    {"name": "Excel Budget Templates", "url": "https://templates.office.com/en-us/budgets", "description": "Microsoft Office templates"},
-                ],
-                'emergency_support': [
-                    {"name": "Local Community Centers", "url": "#", "description": "Check your local municipal website"},
-                    {"name": "Religious Organizations", "url": "#", "description": "Many offer food and support services"},
-                ]
-            }
+        self.learning_resources = {
+            'beginner': [
+                {
+                    'title': 'Khan Academy - Personal Finance',
+                    'url': 'https://www.khanacademy.org/college-careers-more/personal-finance',
+                    'description': 'Free comprehensive personal finance course',
+                    'level': 'Beginner',
+                    'duration': '20 hours',
+                    'icon': '🎓'
+                },
+                {
+                    'title': 'Coursera - Financial Planning',
+                    'url': 'https://www.coursera.org/learn/financial-planning',
+                    'description': 'Professional financial planning course',
+                    'level': 'Beginner',
+                    'duration': '15 hours',
+                    'icon': '📊'
+                }
+            ],
+            'intermediate': [
+                {
+                    'title': 'edX - Personal Finance',
+                    'url': 'https://www.edx.org/learn/personal-finance',
+                    'description': 'University-level personal finance',
+                    'level': 'Intermediate',
+                    'duration': '30 hours',
+                    'icon': '🏫'
+                }
+            ],
+            'advanced': [
+                {
+                    'title': 'Investopedia Academy',
+                    'url': 'https://academy.investopedia.com',
+                    'description': 'Advanced investment strategies',
+                    'level': 'Advanced',
+                    'duration': '25 hours',
+                    'icon': '💼'
+                }
+            ]
         }
-    
+
     def get_currency_symbol(self, country):
-        """Get currency symbol for selected country"""
         return self.country_data.get(country, {'currency': '$', 'symbol': '$'})['currency']
     
     def get_currency_display(self, country):
-        """Get full currency display info"""
         return self.country_data.get(country, {'currency': '$', 'currency_name': 'US Dollar', 'symbol': '$'})
     
-    def get_country_specific_tips(self, country, income_level):
-        """Get country-specific financial tips"""
-        tips = []
-        
-        if country == 'India':
-            tips.extend([
-                "🇮🇳 **India Specific**: Explore PMJDY for zero-balance accounts",
-                "🍚 **Food**: Use PDS ration shops for subsidized grains",
-            ])
-        elif country == 'United States':
-            tips.extend([
-                "🇺🇸 **US Specific**: Explore SNAP benefits for food assistance",
-                "🏠 **Housing**: Check Section 8 housing programs",
-            ])
-        elif country == 'United Kingdom':
-            tips.extend([
-                "🇬🇧 **UK Specific**: Check Universal Credit benefits",
-                "🏠 **Housing**: Explore housing benefit schemes",
-            ])
-        
-        # General tips for all countries
-        tips.extend([
-            "📱 **Digital Tools**: Use mobile banking to track expenses",
-            "🏘️ **Community**: Join local savings groups",
-        ])
-        
-        return tips
-    
-    def get_country_resources(self, country):
-        """Get resources for specific country, fallback to General if not found"""
-        return self.resources.get(country, self.resources['General'])
-    
     def analyze_spending_patterns(self, income, expenses, country, family_size):
-        """AI-powered analysis of spending patterns with country context"""
         total_income = sum(income.values())
         total_expenses = sum(expenses.values())
         savings = total_income - total_expenses
         
-        # AI Recommendation Engine
         recommendations = []
-        
-        # Basic financial health assessment
         savings_ratio = savings / total_income if total_income > 0 else 0
         
-        # Country-specific poverty line approximations (monthly for family of 4)
         poverty_lines = {
             'India': 5000, 'United States': 25000, 'United Kingdom': 18000,
             'European Union': 20000, 'Japan': 22000, 'Canada': 20000,
@@ -185,11 +390,10 @@ class AIBudgetAdvisor:
         }
         
         poverty_line = poverty_lines.get(country, 5000)
-        adjusted_poverty_line = poverty_line * (family_size / 4)  # Adjust for family size
+        adjusted_poverty_line = poverty_line * (family_size / 4)
         
-        # Financial health assessment
         if total_income < adjusted_poverty_line:
-            recommendations.append(f"🎯 **Priority**: Focus on essential needs first and explore assistance programs.")
+            recommendations.append("🎯 **Priority**: Focus on essential needs first and explore assistance programs.")
         
         if savings_ratio < 0.1:
             recommendations.append("💡 **Emergency Fund**: Try to save at least 10% of your income for emergencies")
@@ -200,98 +404,197 @@ class AIBudgetAdvisor:
         if savings_ratio > 0.2:
             recommendations.append("🌟 **Great Job!**: You're saving well. Consider small investments")
         
-        # Add country-specific tips
-        recommendations.extend(self.get_country_specific_tips(country, total_income))
-        
         return {
             'savings': savings,
             'savings_ratio': savings_ratio,
             'recommendations': recommendations,
             'financial_health': 'Good' if savings_ratio >= 0.1 else 'Needs Improvement',
             'poverty_line': adjusted_poverty_line,
-            'above_poverty_line': total_income >= adjusted_poverty_line
+            'above_poverty_line': total_income >= adjusted_poverty_line,
+            'total_income': total_income,
+            'total_expenses': total_expenses
         }
 
-def display_resources_section(country, currency_symbol):
-    """Display actual useful resources with links"""
-    ai_advisor = AIBudgetAdvisor()
-    country_resources = ai_advisor.get_country_resources(country)
+class UserStatistics:
+    def __init__(self):
+        self.user_data = []
     
+    def add_user_data(self, country, income_level, savings_ratio, financial_health):
+        self.user_data.append({
+            'country': country,
+            'income_level': income_level,
+            'savings_ratio': savings_ratio,
+            'financial_health': financial_health,
+            'timestamp': datetime.now()
+        })
+    
+    def get_statistics(self):
+        if not self.user_data:
+            return None
+            
+        df = pd.DataFrame(self.user_data)
+        
+        stats = {
+            'total_users': len(self.user_data),
+            'countries_represented': df['country'].nunique(),
+            'avg_savings_ratio': df['savings_ratio'].mean(),
+            'financial_health_distribution': df['financial_health'].value_counts().to_dict(),
+            'top_countries': df['country'].value_counts().head(5).to_dict()
+        }
+        return stats
+
+class RatingSystem:
+    def __init__(self):
+        self.ratings = []
+    
+    def add_rating(self, rating, feedback=None):
+        self.ratings.append({
+            'rating': rating,
+            'feedback': feedback,
+            'timestamp': datetime.now()
+        })
+    
+    def get_rating_stats(self):
+        if not self.ratings:
+            return None
+            
+        ratings_df = pd.DataFrame(self.ratings)
+        stats = {
+            'total_ratings': len(self.ratings),
+            'average_rating': ratings_df['rating'].mean(),
+            'rating_distribution': ratings_df['rating'].value_counts().sort_index().to_dict(),
+            'recent_ratings': self.ratings[-5:]
+        }
+        return stats
+
+def display_hero_section():
+    """Display beautiful hero section"""
+    st.markdown("""
+    <div class="hero-section floating">
+        <div class="hero-title">Take Control of Your Financial Future</div>
+        <div class="hero-subtitle">AI-powered budgeting insights to help you save more, spend wisely, and achieve your financial goals</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+def display_features():
+    """Display feature cards"""
+    st.markdown("""
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h2 style="color: #333; margin-bottom: 2rem;">Why Choose BudgetBuddy?</h2>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>AI-Powered Insights</h3>
+            <p>Get personalized recommendations based on your spending patterns and financial goals</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class="feature-card">
+            <div class="feature-icon">🌍</div>
+            <h3>Global Perspective</h3>
+            <p>Compare your financial health with users worldwide and get country-specific advice</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("""
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <h3>Visual Analytics</h3>
+            <p>Beautiful charts and graphs to help you understand your financial situation at a glance</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+def display_learning_resources():
+    """Display external learning resources"""
     st.markdown("---")
-    st.subheader("🎯 Actionable Resources & Next Steps")
-    st.info(f"**Selected Country**: {country} | **Resources tailored for your location**")
+    st.header("🎓 Continue Your Financial Journey")
+    st.info("Enhance your financial knowledge with these trusted learning platforms:")
     
-    # Create tabs for different resource types
-    tab1, tab2, tab3 = st.tabs(["💰 Financial Education", "🏛️ Government Schemes", "🤝 Community Support"])
+    ai_advisor = AIBudgetAdvisor()
+    
+    tab1, tab2, tab3 = st.tabs(["🚀 Beginner", "📈 Intermediate", "🎯 Advanced"])
     
     with tab1:
-        st.subheader("Learn Financial Skills")
-        resources = country_resources.get('financial_literacy', []) + ai_advisor.resources['General']['online_learning']
-        
-        for resource in resources:
+        for resource in ai_advisor.learning_resources['beginner']:
             with st.container():
                 st.markdown(f"""
                 <div class="resource-card">
-                    <h4>🔗 {resource['name']}</h4>
-                    <p>{resource['description']}</p>
-                    <a href="{resource['url']}" target="_blank" class="resource-link">Visit Website →</a>
+                    <h4>{resource['icon']} {resource['title']}</h4>
+                    <p><strong>Description:</strong> {resource['description']}</p>
+                    <p><strong>Level:</strong> {resource['level']} • <strong>Duration:</strong> {resource['duration']}</p>
+                    <a href="{resource['url']}" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">Start Learning →</a>
                 </div>
                 """, unsafe_allow_html=True)
+
+def display_statistics(user_stats):
+    """Display user statistics"""
+    st.markdown("---")
+    st.header("📊 Global Community Insights")
+    st.info("Anonymous insights from BudgetBuddy users worldwide")
     
-    with tab2:
-        st.subheader("Government Assistance Programs")
-        resources = country_resources.get('government_schemes', [])
-        
-        if resources:
-            for resource in resources:
-                with st.container():
-                    st.markdown(f"""
-                    <div class="resource-card">
-                        <h4>🏛️ {resource['name']}</h4>
-                        <p>{resource['description']}</p>
-                        <a href="{resource['url']}" target="_blank" class="resource-link">Learn More →</a>
-                    </div>
-                    """, unsafe_allow_html=True)
-        else:
-            st.info("Check your local government website for assistance programs")
+    stats = user_stats.get_statistics()
+    if not stats:
+        st.info("No statistics available yet. Be the first to contribute!")
+        return
     
-    with tab3:
-        st.subheader("Local Community Support")
-        resources = country_resources.get('community_support', []) + ai_advisor.resources['General']['emergency_support']
-        
-        for resource in resources:
-            with st.container():
-                if resource['url'] != '#':
-                    link_html = f'<a href="{resource["url"]}" target="_blank" class="resource-link">Get Help →</a>'
-                else:
-                    link_html = '<span style="color: #666;">Search locally for this resource</span>'
-                
-                st.markdown(f"""
-                <div class="resource-card">
-                    <h4>🤝 {resource['name']}</h4>
-                    <p>{resource['description']}</p>
-                    {link_html}
-                </div>
-                """, unsafe_allow_html=True)
-        
-        # Additional quick tips
-        st.markdown("### 💡 Quick Actions You Can Take Today:")
-        quick_actions = [
-            "📞 **Call local helpline** for immediate assistance",
-            "🔍 **Google** '[Your City] + food bank' or '[Your City] + financial assistance'",
-            "📱 **Download** a free budgeting app from your app store",
-            "🏦 **Visit** your local bank for basic savings account options"
-        ]
-        
-        for action in quick_actions:
-            st.write(f"• {action}")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h3>👥</h3>
+            <h2>{stats['total_users']}</h2>
+            <p>Total Users</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h3>🌍</h3>
+            <h2>{stats['countries_represented']}</h2>
+            <p>Countries</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div class="stat-card">
+            <h3>💰</h3>
+            <h2>{stats['avg_savings_ratio']:.1%}</h2>
+            <p>Avg Savings Rate</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        healthy_users = stats['financial_health_distribution'].get('Good', 0)
+        healthy_percent = (healthy_users / stats['total_users']) * 100
+        st.markdown(f"""
+        <div class="stat-card">
+            <h3>❤️</h3>
+            <h2>{healthy_percent:.0f}%</h2>
+            <p>Financial Health</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 def main():
-    st.markdown('<h1 class="main-header">💰 BudgetBuddy AI - Smart Financial Planning</h1>', unsafe_allow_html=True)
-    st.markdown("### 🌍 AI-Powered Budgeting for Families Worldwide")
+    # Main header with animations
+    st.markdown('<h1 class="main-header">💰 BudgetBuddy AI</h1>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-header">Smart Financial Planning for Everyone</div>', unsafe_allow_html=True)
     
-    # Initialize AI advisor
+    # Initialize systems
     ai_advisor = AIBudgetAdvisor()
+    user_stats = UserStatistics()
+    rating_system = RatingSystem()
     
     # Initialize session state
     if 'analyze' not in st.session_state:
@@ -299,32 +602,58 @@ def main():
     if 'country' not in st.session_state:
         st.session_state.country = 'India'
     
-    # Sidebar for user input
+    # Show hero section and features when no analysis is done
+    if not st.session_state.analyze:
+        display_hero_section()
+        display_features()
+        
+        # Quick start CTA
+        st.markdown("---")
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.subheader("Ready to Transform Your Finances?")
+            st.write("Get started with our AI-powered budget analysis in just a few clicks!")
+        with col2:
+            if st.button("🚀 Start Your Analysis", use_container_width=True):
+                st.session_state.analyze = True
+                st.rerun()
+    
+    # Sidebar - Always visible and enhanced
     with st.sidebar:
-        st.header("🌎 Your Profile")
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2 style="color: #333;">🌎 Your Profile</h2>
+        </div>
+        """, unsafe_allow_html=True)
         
         # Country Selection
         country = st.selectbox(
             "Select Your Country",
             list(ai_advisor.country_data.keys()),
-            index=0  # Default to India
+            index=0
         )
         
         # Display currency information
         currency_info = ai_advisor.get_currency_display(country)
-        st.info(f"**Currency**: {currency_info['currency_name']} ({currency_info['symbol']})")
+        st.markdown(f"""
+        <div class="sidebar-section">
+            <h4>💰 Currency</h4>
+            <p>{currency_info['currency_name']} ({currency_info['symbol']})</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Family size and location for better recommendations
-        family_size = st.slider("Family Size", 1, 10, 4)
-        location_type = st.selectbox("Location Type", ["Urban", "Rural", "Semi-Urban"])
+        # Family information
+        family_size = st.slider("Family Size", 1, 10, 4, key="family_size")
+        location_type = st.selectbox("Location Type", ["Urban", "Rural", "Semi-Urban"], key="location")
         
-        st.header("📊 Your Financial Profile")
+        # Financial inputs in an accordion-like section
+        st.markdown("""
+        <div class="sidebar-section">
+            <h4>📊 Monthly Income</h4>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Get currency symbol for inputs
         currency_symbol = ai_advisor.get_currency_symbol(country)
-        
-        # Monthly Income
-        st.subheader("Monthly Income")
         income = {}
         for category in ai_advisor.income_categories:
             income[category] = st.number_input(
@@ -334,8 +663,12 @@ def main():
                 key=f"inc_{category}"
             )
         
-        # Monthly Expenses
-        st.subheader("Monthly Expenses")
+        st.markdown("""
+        <div class="sidebar-section">
+            <h4>💸 Monthly Expenses</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
         expenses = {}
         for category in ai_advisor.expense_categories:
             expenses[category] = st.number_input(
@@ -345,126 +678,114 @@ def main():
                 key=f"exp_{category}"
             )
         
-        if st.button("🔍 Analyze My Budget", type="primary"):
+        # Analysis button
+        if st.button("🔍 Analyze My Budget", use_container_width=True, type="primary"):
             st.session_state.analyze = True
             st.session_state.country = country
-
-    # Main content area
-    col1, col2 = st.columns([2, 1])
+            st.rerun()
     
-    with col1:
-        if st.session_state.analyze:
-            # AI Analysis
-            analysis = ai_advisor.analyze_spending_patterns(
-                income, expenses, 
-                st.session_state.country, 
-                family_size
-            )
-            
-            # Financial Summary
-            st.subheader("📈 Financial Summary")
-            
-            summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
-            
-            with summary_col1:
-                total_income = sum(income.values())
-                st.metric("Total Monthly Income", f"{currency_symbol}{total_income:,}")
-            
-            with summary_col2:
-                total_expenses = sum(expenses.values())
-                st.metric("Total Monthly Expenses", f"{currency_symbol}{total_expenses:,}")
-            
-            with summary_col3:
-                savings = analysis['savings']
-                st.metric("Monthly Savings", f"{currency_symbol}{savings:,}", 
-                         delta=f"{analysis['savings_ratio']:.1%}")
-            
-            with summary_col4:
-                poverty_status = "Above" if analysis['above_poverty_line'] else "Below"
-                poverty_color = "normal" if analysis['above_poverty_line'] else "off"
-                st.metric(
-                    "Poverty Line Status", 
-                    poverty_status,
-                    delta=f"Est: {currency_symbol}{analysis['poverty_line']:,.0f}",
-                    delta_color=poverty_color
-                )
-            
-            # Visualizations
-            tab1, tab2 = st.tabs(["Income vs Expenses", "Spending Breakdown"])
-            
-            with tab1:
-                # Income vs Expenses chart
-                fig_compare = go.Figure()
-                fig_compare.add_trace(go.Bar(
-                    name='Income',
-                    x=['Total'],
-                    y=[total_income],
-                    marker_color='green'
-                ))
-                fig_compare.add_trace(go.Bar(
-                    name='Expenses',
-                    x=['Total'],
-                    y=[total_expenses],
-                    marker_color='red'
-                ))
-                fig_compare.update_layout(
-                    title=f"Income vs Expenses ({currency_symbol})",
-                    yaxis_title=f"Amount ({currency_symbol})"
-                )
-                st.plotly_chart(fig_compare, use_container_width=True)
-            
-            with tab2:
-                # Expense breakdown
-                expense_data = {k: v for k, v in expenses.items() if v > 0}
-                if expense_data:
-                    fig_expenses = px.pie(
-                        values=list(expense_data.values()),
-                        names=list(expense_data.keys()),
-                        title=f"Expense Distribution ({currency_symbol})"
-                    )
-                    st.plotly_chart(fig_expenses, use_container_width=True)
-                else:
-                    st.info("No expense data to display")
-    
-    with col2:
-        if st.session_state.analyze:
-            # Country Info
-            st.subheader(f"🇺🇳 {st.session_state.country}")
-            st.write(f"**Currency**: {currency_info['currency_name']} ({currency_symbol})")
-            
-            # AI Recommendations
-            st.subheader("🤖 AI Recommendations")
-            
-            for recommendation in analysis['recommendations']:
-                st.markdown(f'<div class="ai-recommendation">{recommendation}</div>', 
-                           unsafe_allow_html=True)
-            
-            # Financial Health Score
-            st.subheader("🏥 Financial Health")
-            health_score = min(100, max(0, int(analysis['savings_ratio'] * 200)))
-            
-            if health_score >= 70:
-                st.success(f"Score: {health_score}/100 - 👍 Good")
-            elif health_score >= 40:
-                st.warning(f"Score: {health_score}/100 - ⚠️ Fair")
-            else:
-                st.error(f"Score: {health_score}/100 - 🚨 Needs Attention")
-            
-            # Quick Budget Tips
-            st.subheader("💡 Quick Tips")
-            tips = [
-                "Track every expense for 30 days",
-                "Cook at home instead of eating out",
-                "Use public transportation when possible",
-                "Buy generic brands for daily essentials"
-            ]
-            
-            for tip in tips:
-                st.write(f"• {tip}")
-    
-    # Display resources section only when analysis is done
+    # Main content when analysis is done
     if st.session_state.analyze:
-        display_resources_section(st.session_state.country, currency_symbol)
+        # AI Analysis
+        analysis = ai_advisor.analyze_spending_patterns(
+            income, expenses, 
+            st.session_state.country, 
+            family_size
+        )
+        
+        # Add to statistics
+        user_stats.add_user_data(
+            st.session_state.country,
+            analysis['total_income'],
+            analysis['savings_ratio'],
+            analysis['financial_health']
+        )
+        
+        # Financial Summary with enhanced visuals
+        st.header("📈 Your Financial Analysis")
+        
+        summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
+        
+        with summary_col1:
+            st.metric("Total Monthly Income", f"{currency_symbol}{analysis['total_income']:,}")
+        
+        with summary_col2:
+            st.metric("Total Monthly Expenses", f"{currency_symbol}{analysis['total_expenses']:,}")
+        
+        with summary_col3:
+            st.metric("Monthly Savings", f"{currency_symbol}{analysis['savings']:,}", 
+                     delta=f"{analysis['savings_ratio']:.1%}")
+        
+        with summary_col4:
+            poverty_status = "Above" if analysis['above_poverty_line'] else "Below"
+            poverty_color = "normal" if analysis['above_poverty_line'] else "off"
+            st.metric(
+                "Poverty Line Status", 
+                poverty_status,
+                delta=f"Est: {currency_symbol}{analysis['poverty_line']:,.0f}",
+                delta_color=poverty_color
+            )
+        
+        # Visualizations
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig_compare = go.Figure()
+            fig_compare.add_trace(go.Bar(
+                name='Income',
+                x=['Total'],
+                y=[analysis['total_income']],
+                marker_color='#28a745'
+            ))
+            fig_compare.add_trace(go.Bar(
+                name='Expenses',
+                x=['Total'],
+                y=[analysis['total_expenses']],
+                marker_color='#dc3545'
+            ))
+            fig_compare.update_layout(
+                title=f"Income vs Expenses ({currency_symbol})",
+                yaxis_title=f"Amount ({currency_symbol})"
+            )
+            st.plotly_chart(fig_compare, use_container_width=True)
+        
+        with col2:
+            expense_data = {k: v for k, v in expenses.items() if v > 0}
+            if expense_data:
+                fig_expenses = px.pie(
+                    values=list(expense_data.values()),
+                    names=list(expense_data.keys()),
+                    title=f"Expense Distribution ({currency_symbol})"
+                )
+                st.plotly_chart(fig_expenses, use_container_width=True)
+        
+        # AI Recommendations with enhanced styling
+        st.header("🤖 Your Personalized Recommendations")
+        for recommendation in analysis['recommendations']:
+            st.markdown(f'<div class="ai-recommendation">{recommendation}</div>', 
+                       unsafe_allow_html=True)
+        
+        # Financial Health Score with progress bar
+        st.subheader("🏥 Financial Health Score")
+        health_score = min(100, max(0, int(analysis['savings_ratio'] * 200)))
+        
+        st.markdown(f"""
+        <div class="progress-container">
+            <div class="progress-fill" style="width: {health_score}%"></div>
+        </div>
+        <p style="text-align: center; font-weight: bold; margin-top: 0.5rem;">{health_score}/100</p>
+        """, unsafe_allow_html=True)
+        
+        if health_score >= 70:
+            st.success("👍 Excellent Financial Health - You're doing great!")
+        elif health_score >= 40:
+            st.warning("⚠️ Fair - There's room for improvement")
+        else:
+            st.error("🚨 Needs Attention - Let's work on improving your financial health")
+        
+        # Display additional sections
+        display_statistics(user_stats)
+        display_learning_resources()
 
 if __name__ == "__main__":
     main()
