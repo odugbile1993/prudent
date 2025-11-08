@@ -141,6 +141,25 @@ st.markdown("""
         box-shadow: 0 8px 25px rgba(0,0,0,0.1);
     }
     
+    .resource-link {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+    
+    .resource-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+    
     .stat-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -212,18 +231,6 @@ st.markdown("""
         box-shadow: 0 5px 20px rgba(0,0,0,0.15);
     }
     
-    /* Input Enhancements */
-    .stNumberInput input, .stSelectbox select {
-        border-radius: 10px !important;
-        border: 2px solid #e9ecef !important;
-        transition: all 0.3s ease !important;
-    }
-    
-    .stNumberInput input:focus, .stSelectbox select:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
-    }
-    
     /* Progress Bars */
     .progress-container {
         background: #e9ecef;
@@ -272,41 +279,6 @@ st.markdown("""
             margin-bottom: 1rem;
         }
     }
-    
-    /* Loading Animation */
-    .loading-spinner {
-        display: inline-block;
-        width: 50px;
-        height: 50px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #667eea;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    /* Rating Stars */
-    .rating-stars {
-        color: #FFD700;
-        font-size: 1.5rem;
-        margin: 0.5rem 0;
-        animation: bounce 2s infinite;
-    }
-    
-    /* Floating Elements */
-    .floating {
-        animation: float 3s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-        100% { transform: translateY(0px); }
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -351,20 +323,36 @@ class AIBudgetAdvisor:
                 {
                     'title': 'edX - Personal Finance',
                     'url': 'https://www.edx.org/learn/personal-finance',
-                    'description': 'University-level personal finance',
+                    'description': 'University-level personal finance courses',
                     'level': 'Intermediate',
                     'duration': '30 hours',
                     'icon': '🏫'
+                },
+                {
+                    'title': 'Udemy - Budgeting Masterclass',
+                    'url': 'https://www.udemy.com/courses/finance-and-accounting/personal-finance/',
+                    'description': 'Practical budgeting techniques and strategies',
+                    'level': 'Intermediate',
+                    'duration': '10 hours',
+                    'icon': '💡'
                 }
             ],
             'advanced': [
                 {
                     'title': 'Investopedia Academy',
                     'url': 'https://academy.investopedia.com',
-                    'description': 'Advanced investment strategies',
+                    'description': 'Advanced investment and wealth management strategies',
                     'level': 'Advanced',
                     'duration': '25 hours',
                     'icon': '💼'
+                },
+                {
+                    'title': 'MIT OpenCourseWare - Finance',
+                    'url': 'https://ocw.mit.edu/courses/finance/',
+                    'description': 'Advanced financial theory and applications',
+                    'level': 'Advanced',
+                    'duration': '40 hours',
+                    'icon': '🎯'
                 }
             ]
         }
@@ -403,6 +391,13 @@ class AIBudgetAdvisor:
         
         if savings_ratio > 0.2:
             recommendations.append("🌟 **Great Job!**: You're saving well. Consider small investments")
+        
+        # Add more specific recommendations based on expense patterns
+        if expenses.get('Transport', 0) / total_income > 0.2:
+            recommendations.append("🚌 **Transport**: Consider carpooling or public transport to reduce costs")
+        
+        if expenses.get('Utilities', 0) / total_income > 0.15:
+            recommendations.append("⚡ **Utilities**: Look into energy-efficient appliances and practices")
         
         return {
             'savings': savings,
@@ -443,34 +438,10 @@ class UserStatistics:
         }
         return stats
 
-class RatingSystem:
-    def __init__(self):
-        self.ratings = []
-    
-    def add_rating(self, rating, feedback=None):
-        self.ratings.append({
-            'rating': rating,
-            'feedback': feedback,
-            'timestamp': datetime.now()
-        })
-    
-    def get_rating_stats(self):
-        if not self.ratings:
-            return None
-            
-        ratings_df = pd.DataFrame(self.ratings)
-        stats = {
-            'total_ratings': len(self.ratings),
-            'average_rating': ratings_df['rating'].mean(),
-            'rating_distribution': ratings_df['rating'].value_counts().sort_index().to_dict(),
-            'recent_ratings': self.ratings[-5:]
-        }
-        return stats
-
 def display_hero_section():
     """Display beautiful hero section"""
     st.markdown("""
-    <div class="hero-section floating">
+    <div class="hero-section">
         <div class="hero-title">Take Control of Your Financial Future</div>
         <div class="hero-subtitle">AI-powered budgeting insights to help you save more, spend wisely, and achieve your financial goals</div>
     </div>
@@ -513,17 +484,17 @@ def display_features():
         </div>
         """, unsafe_allow_html=True)
 
-def display_learning_resources():
-    """Display external learning resources"""
+def display_learning_resources(ai_advisor):
+    """Display external learning resources with all levels"""
     st.markdown("---")
     st.header("🎓 Continue Your Financial Journey")
     st.info("Enhance your financial knowledge with these trusted learning platforms:")
     
-    ai_advisor = AIBudgetAdvisor()
-    
+    # Create tabs for different levels
     tab1, tab2, tab3 = st.tabs(["🚀 Beginner", "📈 Intermediate", "🎯 Advanced"])
     
     with tab1:
+        st.subheader("Start Your Financial Education")
         for resource in ai_advisor.learning_resources['beginner']:
             with st.container():
                 st.markdown(f"""
@@ -531,7 +502,33 @@ def display_learning_resources():
                     <h4>{resource['icon']} {resource['title']}</h4>
                     <p><strong>Description:</strong> {resource['description']}</p>
                     <p><strong>Level:</strong> {resource['level']} • <strong>Duration:</strong> {resource['duration']}</p>
-                    <a href="{resource['url']}" target="_blank" style="color: #1f77b4; text-decoration: none; font-weight: bold;">Start Learning →</a>
+                    <a href="{resource['url']}" target="_blank" class="resource-link">Start Learning →</a>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    with tab2:
+        st.subheader("Build Advanced Financial Skills")
+        for resource in ai_advisor.learning_resources['intermediate']:
+            with st.container():
+                st.markdown(f"""
+                <div class="resource-card">
+                    <h4>{resource['icon']} {resource['title']}</h4>
+                    <p><strong>Description:</strong> {resource['description']}</p>
+                    <p><strong>Level:</strong> {resource['level']} • <strong>Duration:</strong> {resource['duration']}</p>
+                    <a href="{resource['url']}" target="_blank" class="resource-link">Continue Learning →</a>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    with tab3:
+        st.subheader("Master Personal Finance")
+        for resource in ai_advisor.learning_resources['advanced']:
+            with st.container():
+                st.markdown(f"""
+                <div class="resource-card">
+                    <h4>{resource['icon']} {resource['title']}</h4>
+                    <p><strong>Description:</strong> {resource['description']}</p>
+                    <p><strong>Level:</strong> {resource['level']} • <strong>Duration:</strong> {resource['duration']}</p>
+                    <a href="{resource['url']}" target="_blank" class="resource-link">Master Skills →</a>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -585,6 +582,27 @@ def display_statistics(user_stats):
             <p>Financial Health</p>
         </div>
         """, unsafe_allow_html=True)
+    
+    # Additional charts
+    if stats['financial_health_distribution']:
+        col1, col2 = st.columns(2)
+        with col1:
+            health_data = pd.DataFrame({
+                'Health Status': list(stats['financial_health_distribution'].keys()),
+                'Count': list(stats['financial_health_distribution'].values())
+            })
+            fig_health = px.pie(health_data, values='Count', names='Health Status', 
+                              title='Financial Health Distribution')
+            st.plotly_chart(fig_health, use_container_width=True)
+
+def initialize_session_state():
+    """Initialize session state variables"""
+    if 'analyze' not in st.session_state:
+        st.session_state.analyze = False
+    if 'country' not in st.session_state:
+        st.session_state.country = 'India'
+    if 'user_stats' not in st.session_state:
+        st.session_state.user_stats = UserStatistics()
 
 def main():
     # Main header with animations
@@ -593,14 +611,7 @@ def main():
     
     # Initialize systems
     ai_advisor = AIBudgetAdvisor()
-    user_stats = UserStatistics()
-    rating_system = RatingSystem()
-    
-    # Initialize session state
-    if 'analyze' not in st.session_state:
-        st.session_state.analyze = False
-    if 'country' not in st.session_state:
-        st.session_state.country = 'India'
+    initialize_session_state()
     
     # Show hero section and features when no analysis is done
     if not st.session_state.analyze:
@@ -609,14 +620,22 @@ def main():
         
         # Quick start CTA
         st.markdown("---")
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.subheader("Ready to Transform Your Finances?")
-            st.write("Get started with our AI-powered budget analysis in just a few clicks!")
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("🚀 Start Your Analysis", use_container_width=True):
+            st.markdown("""
+            <div style="text-align: center;">
+                <h3>Ready to Transform Your Finances?</h3>
+                <p>Get started with our AI-powered budget analysis in just a few clicks!</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # This button should work now
+            if st.button("🚀 Start Your Analysis Now", use_container_width=True, type="primary"):
                 st.session_state.analyze = True
                 st.rerun()
+        
+        # Show learning resources on homepage
+        display_learning_resources(ai_advisor)
     
     # Sidebar - Always visible and enhanced
     with st.sidebar:
@@ -646,7 +665,7 @@ def main():
         family_size = st.slider("Family Size", 1, 10, 4, key="family_size")
         location_type = st.selectbox("Location Type", ["Urban", "Rural", "Semi-Urban"], key="location")
         
-        # Financial inputs in an accordion-like section
+        # Financial inputs
         st.markdown("""
         <div class="sidebar-section">
             <h4>📊 Monthly Income</h4>
@@ -694,7 +713,7 @@ def main():
         )
         
         # Add to statistics
-        user_stats.add_user_data(
+        st.session_state.user_stats.add_user_data(
             st.session_state.country,
             analysis['total_income'],
             analysis['savings_ratio'],
@@ -758,6 +777,8 @@ def main():
                     title=f"Expense Distribution ({currency_symbol})"
                 )
                 st.plotly_chart(fig_expenses, use_container_width=True)
+            else:
+                st.info("No expense data to display")
         
         # AI Recommendations with enhanced styling
         st.header("🤖 Your Personalized Recommendations")
@@ -784,8 +805,8 @@ def main():
             st.error("🚨 Needs Attention - Let's work on improving your financial health")
         
         # Display additional sections
-        display_statistics(user_stats)
-        display_learning_resources()
+        display_statistics(st.session_state.user_stats)
+        display_learning_resources(ai_advisor)
 
 if __name__ == "__main__":
     main()
